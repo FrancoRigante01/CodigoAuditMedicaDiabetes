@@ -1,0 +1,78 @@
+[
+  {
+    "tipo_documento": "estudio_diagnostico",
+    "confianza_clasificacion": 75,
+    "campos_extraidos": {
+      "tipo_informe": {
+        "valor": "Ecocardiografía",
+        "confianza": 91
+      },
+      "fecha": {
+        "valor": "11/07/2024",
+        "confianza": 99
+      },
+      "conclusion_relevante": {
+        "valor": "Función sistólica y diastólica conservadas. Sin hallazgos patológicos",
+        "confianza": 87
+      }
+    },
+    "faltantes_o_inconsistencias": []
+  },
+  {
+    "tipo_documento": "estudio_diagnostico",
+    "confianza_clasificacion": 75,
+    "campos_extraidos": {
+      "tipo_informe": {
+        "valor": "Ecocardiografía",
+        "confianza": 91
+      },
+      "fecha": {
+        "valor": "11/07/2024",
+        "confianza": 99
+      },
+      "conclusion_relevante": {
+        "valor": "Función sistólica y diastólica conservadas. Sin hallazgos patológicos",
+        "confianza": 87
+      }
+    },
+    "faltantes_o_inconsistencias": []
+  },
+  {
+    "tipo_documento": "estudio_diagnostico",
+    "confianza_clasificacion": 75,
+    "campos_extraidos": {
+      "tipo_informe": {
+        "valor": "Ecocardiografía",
+        "confianza": 91
+      },
+      "fecha": {
+        "valor": "11/07/2024",
+        "confianza": 99
+      },
+      "conclusion_relevante": {
+        "valor": "Función sistólica y diastólica conservadas. Sin hallazgos patológicos",
+        "confianza": 87
+      }
+    },
+    "faltantes_o_inconsistencias": []
+  },
+  {
+    "tipo_documento": "estudio_diagnostico",
+    "confianza_clasificacion": 75,
+    "campos_extraidos": {
+      "tipo_informe": {
+        "valor": "Ecocardiografía",
+        "confianza": 91
+      },
+      "fecha": {
+        "valor": "11/07/2024",
+        "confianza": 99
+      },
+      "conclusion_relevante": {
+        "valor": "Función sistólica y diastólica conservadas. Sin hallazgos patológicos",
+        "confianza": 87
+      }
+    },
+    "faltantes_o_inconsistencias": []
+  }
+]

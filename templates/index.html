@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría Documental - Diabetes (Demo)</title>
+    <style>
+        :root {
+            --color-bg: #f5f7fa;
+            --color-card: #ffffff;
+            --color-primary: #2563eb;
+            --color-primary-hover: #1d4ed8;
+            --color-danger: #dc2626;
+            --color-success: #16a34a;
+            --color-warning: #f59e0b;
+            --color-info: #0284c7;
+            --color-text: #1f2937;
+            --color-muted: #6b7280;
+            --radius: 8px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: var(--color-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+
+        h1, h2, h3, h4 {
+            margin: 0 0 8px;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            margin-bottom: 16px;
+        }
+
+        .subtitle {
+            color: var(--color-muted);
+            font-size: 0.95rem;
+            margin-bottom: 24px;
+        }
+
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid var(--color-warning);
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            color: #78350f;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: var(--radius);
+            background: #fff;
+            font-size: 1rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: var(--radius);
+            padding: 28px 20px;
+            text-align: center;
+            background: #f9fafb;
+            transition: background-color 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            background: #eff6ff;
+            border-color: var(--color-primary);
+        }
+
+        .drop-zone__icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .drop-zone__text {
+            font-size: 1rem;
+            color: var(--color-text);
+            margin-bottom: 8px;
+        }
+
+        .drop-zone__hint {
+            font-size: 0.85rem;
+            color: var(--color-muted);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 16px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .file-item__badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+            background: #dbeafe;
+            color: #1e40af;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .file-item button {
+            background: transparent;
+            color: var(--color-danger);
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+        }
+
+        button {
+            border: none;
+            border-radius: var(--radius);
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, opacity 0.2s;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #4b5563;
+        }
+
+        .btn-outline {
+            background-color: #fff;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+        }
+
+        .spinner {
+            display: none;
+            margin-left: 10px;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-top: 16px;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border-left: 4px solid var(--color-danger);
+            color: #7f1d1d;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border-left: 4px solid var(--color-success);
+            color: #064e3b;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-left: 4px solid var(--color-warning);
+            color: #78350f;
+        }
+
+        .alert-info {
+            background: #e0f2fe;
+            border-left: 4px solid var(--color-info);
+            color: #0c4a6e;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .filename {
+            color: var(--color-muted);
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .status-ok { background: #d1fae5; color: #065f46; }
+        .status-warn { background: #fef3c7; color: #92400e; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+        .status-info { background: #e0f2fe; color: #075985; }
+
+        .issues-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .issue-blocking { color: #991b1b; font-weight: 600; }
+        .issue-warning { color: #92400e; }
+
+        .json-tree {
+            background: #111827;
+            color: #e5e7eb;
+            padding: 20px;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-family: Consolas, Monaco, "Courier New", monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-top: 16px;
+        }
+
+        .json-tree .key { color: #93c5fd; }
+        .json-tree .string { color: #a7f3d0; }
+        .json-tree .number { color: #fdba74; }
+        .json-tree .boolean { color: #fca5a5; }
+        .json-tree .null { color: #d1d5db; }
+        .json-tree ul { list-style: none; margin: 0; padding-left: 20px; }
+        .json-tree li { margin: 2px 0; }
+        .json-tree .collapsible::before { content: "▾"; display: inline-block; margin-right: 6px; cursor: pointer; color: #9ca3af; }
+        .json-tree .collapsed > .collapsible::before { content: "▸"; }
+        .json-tree .collapsed > ul { display: none; }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .tab {
+            padding: 10px 18px;
+            background: transparent;
+            color: var(--color-muted);
+            border-bottom: 3px solid transparent;
+            border-radius: 0;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--color-muted);
+            font-size: 0.85rem;
+            padding-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="file-protocol-warning" class="warning" style="display: none; margin-bottom: 24px;">
+            <strong>⚠️ Acceso directo detectado:</strong> Este archivo se abrió con <code>file://</code>. Para usar la auditoría, ejecutá el servidor Flask y accedé por HTTP.<br>
+            <em>Comando:</em> <code>python web_app.py</code> — <em>URL:</em> <code>http://127.0.0.1:5000</code>
+        </div>
+
+        <div class="card">
+            <h1>Auditoría Documental - Diabetes</h1>
+            <p class="subtitle">Demo de ingesta, clasificación y validación de documentos médicos</p>
+
+            <div class="warning">
+                <strong>⚠️ Solo para demo:</strong> No subir datos reales de pacientes. Este entorno no tiene seguridad ni compliance habilitados.
+            </div>
+
+            <div class="tabs">
+                <button class="tab active" data-section="audit">Auditar documento</button>
+                <button class="tab" data-section="renewal">Renovación de tratamiento</button>
+            </div>
+
+            <!-- Audit Section (existing demo) -->
+            <div id="audit-section" class="section active">
+                <form id="audit-form" action="/" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="document">Documento a auditar</label>
+                        <div class="drop-zone" id="drop-zone">
+                            <div class="drop-zone__icon">📁</div>
+                            <div class="drop-zone__text">Arrastrar archivo aquí o hacer clic para seleccionar</div>
+                            <div class="drop-zone__hint">PDF, PNG, JPG, JPEG — máximo 50 MB</div>
+                        </div>
+                        <input type="file" id="document" name="document" accept=".pdf,.png,.jpg,.jpeg" required>
+                    </div>
+
+                    <div id="file-info" class="file-info" style="display: none;">
+                        <div>
+                            <div class="file-info__name" id="file-name"></div>
+                            <div class="file-info__size" id="file-size"></div>
+                        </div>
+                        <button type="button" class="btn-secondary" id="remove-file-btn">Eliminar</button>
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn-primary" id="submit-btn" disabled>
+                            Auditar documento
+                            <span class="spinner" id="spinner"></span>
+                        </button>
+                        <button type="button" class="btn-secondary" id="clear-btn">Limpiar</button>
+                    </div>
+                </form>
+
+                <div id="alert-container"></div>
+            </div>
+
+            <!-- Renewal Section -->
+            <div id="renewal-section" class="section">
+                <div id="renewal-init-panel">
+                    <h2>Solicitud de renovación</h2>
+                    <p class="subtitle">Cargá la documentación requerida para solicitar la renovación. El sistema validará cada archivo al momento de subirlo.</p>
+                    <button class="btn-primary" id="create-solicitud-btn">Iniciar solicitud</button>
+                </div>
+
+                <div id="renewal-upload-panel" style="display: none;">
+                    <div class="result-header">
+                        <h2>Cargar documentos</h2>
+                        <span class="filename" id="renewal-solicitud-id"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="renewal-requirement">Tipo de documento</label>
+                        <select id="renewal-requirement"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="drop-zone" id="renewal-drop-zone">
+                            <div class="drop-zone__icon">📎</div>
+                            <div class="drop-zone__text">Arrastrar archivo aquí o hacer clic</div>
+                            <div class="drop-zone__hint">PDF, PNG, JPG, JPEG — máximo 50 MB</div>
+                        </div>
+                        <input type="file" id="renewal-file" accept=".pdf,.png,.jpg,.jpeg">
+                    </div>
+
+                    <div class="button-group">
+                        <button class="btn-outline" id="upload-renewal-btn" disabled>
+                            Subir documento
+                            <span class="spinner" id="renewal-upload-spinner"></span>
+                        </button>
+                    </div>
+
+                    <h3>Documentos cargados</h3>
+                    <div id="renewal-files-list" class="file-list"></div>
+
+                    <h3>Estado de la solicitud</h3>
+                    <div id="renewal-status-panel"></div>
+
+                    <div class="button-group">
+                        <button class="btn-primary" id="submit-renewal-btn" disabled>
+                            Enviar solicitud
+                            <span class="spinner" id="renewal-submit-spinner"></span>
+                        </button>
+                        <button class="btn-secondary" id="reset-renewal-btn">Nueva solicitud</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-card" class="card" style="display: none;">
+            <div class="result-header">
+                <div class="result-title">Resultado de la auditoría</div>
+                <div class="filename" id="result-filename"></div>
+            </div>
+            <div class="json-tree" id="json-tree"></div>
+        </div>
+
+        <footer>
+            Módulo Demo — Datos ficticios — No usar en producción con información real
+        </footer>
+    </div>
+
+    <!-- Server state for JavaScript re-hydration after form POST -->
+    {% if result_json %}
+    <script id="server-result-json" type="application/json" style="display: none;">
+      {{ result_json | safe }}
+    </script>
+    {% endif %}
+    {% if filename %}
+    <div id="server-filename" style="display: none;">{{ filename }}</div>
+    {% endif %}
+    {% if error %}
+    <div id="server-error" style="display: none;">{{ error }}</div>
+    {% endif %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const MAX_SIZE = 50 * 1024 * 1024;
+            const ALLOWED_EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg'];
+            const ALLOWED_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];
+
+            // Audit elements
+            const form = document.getElementById('audit-form');
+            const dropZone = document.getElementById('drop-zone');
+            const fileInput = document.getElementById('document');
+            const fileInfo = document.getElementById('file-info');
+            const fileNameEl = document.getElementById('file-name');
+            const fileSizeEl = document.getElementById('file-size');
+            const removeFileBtn = document.getElementById('remove-file-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const spinner = document.getElementById('spinner');
+            const clearBtn = document.getElementById('clear-btn');
+            const alertContainer = document.getElementById('alert-container');
+            const resultCard = document.getElementById('result-card');
+            const resultFilenameEl = document.getElementById('result-filename');
+            const jsonTreeEl = document.getElementById('json-tree');
+
+            // Renewal elements
+            const tabs = document.querySelectorAll('.tab');
+            const sections = document.querySelectorAll('.section');
+            const createSolicitudBtn = document.getElementById('create-solicitud-btn');
+            const renewalInitPanel = document.getElementById('renewal-init-panel');
+            const renewalUploadPanel = document.getElementById('renewal-upload-panel');
+            const requirementSelect = document.getElementById('renewal-requirement');
+            const renewalDropZone = document.getElementById('renewal-drop-zone');
+            const renewalFileInput = document.getElementById('renewal-file');
+            const uploadRenewalBtn = document.getElementById('upload-renewal-btn');
+            const renewalUploadSpinner = document.getElementById('renewal-upload-spinner');
+            const renewalFilesList = document.getElementById('renewal-files-list');
+            const renewalStatusPanel = document.getElementById('renewal-status-panel');
+            const submitRenewalBtn = document.getElementById('submit-renewal-btn');
+            const renewalSubmitSpinner = document.getElementById('renewal-submit-spinner');
+            const resetRenewalBtn = document.getElementById('reset-renewal-btn');
+            const renewalSolicitudIdEl = document.getElementById('renewal-solicitud-id');
+
+            let currentSolicitudId = null;
+            let currentRenewalFile = null;
+
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function validateFile(file) {
+                const ext = '.' + file.name.split('.').pop().toLowerCase();
+                const isValidType = ALLOWED_TYPES.includes(file.type) || ALLOWED_EXTENSIONS.includes(ext);
+                if (!isValidType) {
+                    return 'Formato no permitido. Subir PDF, PNG, JPG o JPEG.';
+                }
+                if (file.size > MAX_SIZE) {
+                    return 'El archivo excede el tamaño máximo de 50 MB.';
+                }
+                return null;
+            }
+
+            function showAlert(message, type, container) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-' + type;
+                alert.innerHTML = message;
+                container.innerHTML = '';
+                container.appendChild(alert);
+            }
+
+            function clearAlerts(container) {
+                container.innerHTML = '';
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function renderJsonTree(data, isRoot = true) {
+                const type = Array.isArray(data) ? 'array' : typeof data;
+                if (data === null) return '<span class="null">null</span>';
+                if (type === 'boolean') return '<span class="boolean">' + data + '</span>';
+                if (type === 'number') return '<span class="number">' + data + '</span>';
+                if (type === 'string') return '<span class="string">"' + escapeHtml(data) + '"</span>';
+                if (type === 'array' || type === 'object') {
+                    const entries = type === 'array' ? data.map((v, i) => [i, v]) : Object.entries(data);
+                    if (entries.length === 0) return type === 'array' ? '[]' : '{}';
+                    let html = type === 'array' ? '[' : '{';
+                    html += '<ul>';
+                    for (const [key, value] of entries) {
+                        html += '<li>';
+                        if (type === 'object') {
+                            html += '<span class="key">' + escapeHtml(key) + ':</span> ';
+                        }
+                        html += renderJsonTree(value, false);
+                        html += '</li>';
+                    }
+                    html += '</ul>';
+                    html += type === 'array' ? ']' : '}';
+                    return html;
+                }
+                return escapeHtml(String(data));
+            }
+
+            // Tabs
+            tabs.forEach(function (tab) {
+                tab.addEventListener('click', function () {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+                    tab.classList.add('active');
+                    const sectionId = tab.dataset.section + '-section';
+                    document.getElementById(sectionId).classList.add('active');
+                });
+            });
+
+            // Audit drop zone
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) handleAuditFile(files[0]);
+            });
+
+            fileInput.addEventListener('change', function () {
+                const file = fileInput.files[0];
+                if (file) handleAuditFile(file);
+            });
+
+            function handleAuditFile(file) {
+                const error = validateFile(file);
+                if (error) {
+                    showAlert(error, 'error', alertContainer);
+                    clearAuditFile();
+                } else {
+                    fileNameEl.textContent = file.name;
+                    fileSizeEl.textContent = formatBytes(file.size);
+                    fileInfo.style.display = 'flex';
+                    submitBtn.disabled = false;
+                    clearAlerts(alertContainer);
+                }
+            }
+
+            function clearAuditFile() {
+                form.reset();
+                fileInfo.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+
+            removeFileBtn.addEventListener('click', clearAuditFile);
+
+            if (window.location.protocol === 'file:') {
+                document.getElementById('file-protocol-warning').style.display = 'block';
+                submitBtn.disabled = true;
+                createSolicitudBtn.disabled = true;
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (window.location.protocol === 'file:') return;
+                const file = fileInput.files[0];
+                if (!file) {
+                    showAlert('No se seleccionó ningún archivo.', 'error', alertContainer);
+                    return;
+                }
+                const error = validateFile(file);
+                if (error) {
+                    showAlert(error, 'error', alertContainer);
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                spinner.style.display = 'inline-block';
+                clearAlerts(alertContainer);
+                resultCard.style.display = 'none';
+
+                const formData = new FormData(form);
+                fetch('/', { method: 'POST', body: formData })
+                    .then(response => response.text())
+                    .then(html => {
+                        spinner.style.display = 'none';
+                        submitBtn.disabled = false;
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const resultJson = doc.getElementById('server-result-json');
+                        const serverError = doc.getElementById('server-error');
+                        const serverFilename = doc.getElementById('server-filename');
+
+                        if (serverError) showAlert(serverError.textContent, 'error', alertContainer);
+
+                        if (resultJson && serverFilename) {
+                            let parsed;
+                            try { parsed = JSON.parse(resultJson.textContent); }
+                            catch (err) {
+                                showAlert('Error al interpretar el resultado del servidor.', 'error', alertContainer);
+                                return;
+                            }
+                            resultFilenameEl.textContent = serverFilename.textContent;
+                            jsonTreeEl.innerHTML = renderJsonTree(parsed);
+                            resultCard.style.display = 'block';
+                            showAlert('Documento auditado correctamente.', 'success', alertContainer);
+                        }
+                    })
+                    .catch(err => {
+                        spinner.style.display = 'none';
+                        submitBtn.disabled = false;
+                        showAlert('Error de comunicación con el servidor: ' + err.message, 'error', alertContainer);
+                    });
+            });
+
+            clearBtn.addEventListener('click', function () {
+                clearAuditFile();
+                clearAlerts(alertContainer);
+                resultCard.style.display = 'none';
+                jsonTreeEl.innerHTML = '';
+            });
+
+            // Renewal helpers
+            function getApiBaseUrl() {
+                return window.location.origin || 'http://127.0.0.1:5000';
+            }
+
+            function fetchCatalog() {
+                return fetch(getApiBaseUrl() + '/api/renovacion/catalogo/RENOVACION_DIABETES')
+                    .then(r => r.json());
+            }
+
+            function renderRequirementOptions(catalog) {
+                requirementSelect.innerHTML = '';
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Seleccioná el tipo de documento que vas a subir';
+                requirementSelect.appendChild(placeholder);
+                catalog.requirements.forEach(function (req) {
+                    const opt = document.createElement('option');
+                    opt.value = req.requirement_id;
+                    opt.textContent = req.name;
+                    requirementSelect.appendChild(opt);
+                });
+            }
+
+            function renderFileList(documents) {
+                renewalFilesList.innerHTML = '';
+                if (!documents || documents.length === 0) {
+                    renewalFilesList.innerHTML = '<p class="filename" style="padding:12px 0;">Aún no hay documentos cargados.</p>';
+                    return;
+                }
+                documents.forEach(function (doc) {
+                    const item = document.createElement('div');
+                    item.className = 'file-item';
+                    const detected = doc.processing_result && doc.processing_result.tipo_documento
+                        ? '<span class="file-item__badge">' + escapeHtml(doc.processing_result.tipo_documento) + '</span>'
+                        : '';
+                    item.innerHTML = '<div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+                        escapeHtml(doc.filename) + detected + '</div>' +
+                        '<button type="button" data-doc-id="' + escapeHtml(doc.document_id) + '">Eliminar</button>';
+                    item.querySelector('button').addEventListener('click', function () {
+                        deleteRenewalDocument(doc.document_id);
+                    });
+                    renewalFilesList.appendChild(item);
+                });
+            }
+
+            function renderStatus(validation) {
+                renewalStatusPanel.innerHTML = '';
+                const wrapper = document.createElement('div');
+                const statusClass = validation.can_submit ? 'status-ok' : 'status-error';
+                const statusText = validation.can_submit ? 'Lista para enviar a auditoría' : 'No se puede enviar';
+                wrapper.innerHTML = '<span class="status-badge ' + statusClass + '">' + escapeHtml(validation.status) + '</span>' +
+                    '<div><strong>' + statusText + '</strong></div>';
+                const list = document.createElement('ul');
+                list.className = 'issues-list';
+                validation.issues.forEach(function (issue) {
+                    const li = document.createElement('li');
+                    li.className = issue.blocks_submission ? 'issue-blocking' : 'issue-warning';
+                    li.textContent = issue.message;
+                    list.appendChild(li);
+                });
+                wrapper.appendChild(list);
+                renewalStatusPanel.appendChild(wrapper);
+
+                submitRenewalBtn.disabled = !validation.can_submit;
+                submitRenewalBtn.title = validation.can_submit
+                    ? 'Enviar solicitud a auditoría'
+                    : 'Corregí los problemas antes de enviar';
+            }
+
+            function createSolicitud() {
+                if (window.location.protocol === 'file:') return;
+                createSolicitudBtn.disabled = true;
+                fetch(getApiBaseUrl() + '/api/renovacion/solicitudes', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        currentSolicitudId = data.solicitud_model.solicitud_id;
+                        renewalSolicitudIdEl.textContent = 'Solicitud ' + currentSolicitudId;
+                        renewalInitPanel.style.display = 'none';
+                        renewalUploadPanel.style.display = 'block';
+                        return fetchCatalog();
+                    })
+                    .then(catalog => {
+                        renderRequirementOptions(catalog);
+                    })
+                    .catch(err => {
+                        createSolicitudBtn.disabled = false;
+                        showAlert('Error al crear la solicitud: ' + err.message, 'error', renewalStatusPanel);
+                    });
+            }
+
+            function handleRenewalFile(file) {
+                const error = validateFile(file);
+                if (error) {
+                    showAlert(error, 'error', renewalStatusPanel);
+                    currentRenewalFile = null;
+                    uploadRenewalBtn.disabled = true;
+                } else {
+                    currentRenewalFile = file;
+                    uploadRenewalBtn.disabled = false;
+                    clearAlerts(renewalStatusPanel);
+                }
+            }
+
+            function uploadRenewalDocument() {
+                if (!currentRenewalFile || !currentSolicitudId) return;
+                const requirementId = requirementSelect.value;
+                if (!requirementId) {
+                    showAlert('Seleccioná el tipo de documento antes de subir.', 'error', renewalStatusPanel);
+                    return;
+                }
+                uploadRenewalBtn.disabled = true;
+                renewalUploadSpinner.style.display = 'inline-block';
+                clearAlerts(renewalStatusPanel);
+
+                const formData = new FormData();
+                formData.append('document', currentRenewalFile);
+                formData.append('requirement_id', requirementId);
+
+                fetch(getApiBaseUrl() + '/api/renovacion/solicitudes/' + currentSolicitudId + '/documentos', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        renewalUploadSpinner.style.display = 'none';
+                        currentRenewalFile = null;
+                        renewalFileInput.value = '';
+                        uploadRenewalBtn.disabled = true;
+                        if (data.error) {
+                            showAlert(data.error, 'error', renewalStatusPanel);
+                            return;
+                        }
+                        // Re-fetch full validation + list for accurate UI state.
+                        return fetch(getApiBaseUrl() + '/api/renovacion/solicitudes/' + currentSolicitudId + '/validar');
+                    })
+                    .then(r => r && r.json())
+                    .then(validationData => {
+                        if (validationData) {
+                            renderFileList(validationData.documents || []);
+                            renderStatus(validationData);
+                        }
+                    })
+                    .catch(err => {
+                        renewalUploadSpinner.style.display = 'none';
+                        uploadRenewalBtn.disabled = false;
+                        showAlert('Error al subir documento: ' + err.message, 'error', renewalStatusPanel);
+                    });
+            }
+
+            function deleteRenewalDocument(documentId) {
+                if (!currentSolicitudId) return;
+                fetch(getApiBaseUrl() + '/api/renovacion/solicitudes/' + currentSolicitudId + '/documentos/' + documentId, {
+                    method: 'DELETE'
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.error) {
+                            showAlert(data.error, 'error', renewalStatusPanel);
+                            return;
+                        }
+                        return fetch(getApiBaseUrl() + '/api/renovacion/solicitudes/' + currentSolicitudId + '/validar');
+                    })
+                    .then(r => r && r.json())
+                    .then(validationData => {
+                        if (validationData) {
+                            renderFileList(validationData.documents || []);
+                            renderStatus(validationData);
+                        }
+                    })
+                    .catch(err => {
+                        showAlert('Error al eliminar documento: ' + err.message, 'error', renewalStatusPanel);
+                    });
+            }
+
+            function submitRenewal() {
+                if (!currentSolicitudId) return;
+                submitRenewalBtn.disabled = true;
+                renewalSubmitSpinner.style.display = 'inline-block';
+                fetch(getApiBaseUrl() + '/api/renovacion/solicitudes/' + currentSolicitudId + '/enviar', {
+                    method: 'POST'
+                })
+                    .then(r => r.json().then(body => ({ status: r.status, body: body })))
+                    .then(({ status, body }) => {
+                        renewalSubmitSpinner.style.display = 'none';
+                        if (status === 200 && body.success) {
+                            showAlert(body.message, 'success', renewalStatusPanel);
+                            renderStatus(body.validation);
+                            submitRenewalBtn.style.display = 'none';
+                        } else {
+                            submitRenewalBtn.disabled = false;
+                            renderStatus(body.validation);
+                            let msg = body.reason || body.error || 'No se pudo enviar la solicitud.';
+                            showAlert(msg, 'error', renewalStatusPanel);
+                        }
+                    })
+                    .catch(err => {
+                        renewalSubmitSpinner.style.display = 'none';
+                        submitRenewalBtn.disabled = false;
+                        showAlert('Error al enviar solicitud: ' + err.message, 'error', renewalStatusPanel);
+                    });
+            }
+
+            function resetRenewal() {
+                currentSolicitudId = null;
+                currentRenewalFile = null;
+                renewalInitPanel.style.display = 'block';
+                renewalUploadPanel.style.display = 'none';
+                renewalFilesList.innerHTML = '';
+                renewalStatusPanel.innerHTML = '';
+                requirementSelect.innerHTML = '';
+                renewalFileInput.value = '';
+                uploadRenewalBtn.disabled = true;
+                submitRenewalBtn.disabled = true;
+                submitRenewalBtn.style.display = 'inline-block';
+                createSolicitudBtn.disabled = false;
+            }
+
+            // Renewal event wiring
+            createSolicitudBtn.addEventListener('click', createSolicitud);
+
+            renewalDropZone.addEventListener('click', () => renewalFileInput.click());
+            renewalDropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                renewalDropZone.classList.add('drag-over');
+            });
+            renewalDropZone.addEventListener('dragleave', () => renewalDropZone.classList.remove('drag-over'));
+            renewalDropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                renewalDropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) handleRenewalFile(files[0]);
+            });
+            renewalFileInput.addEventListener('change', function () {
+                const file = renewalFileInput.files[0];
+                if (file) handleRenewalFile(file);
+            });
+
+            uploadRenewalBtn.addEventListener('click', uploadRenewalDocument);
+            submitRenewalBtn.addEventListener('click', submitRenewal);
+            resetRenewalBtn.addEventListener('click', resetRenewal);
+        });
+    </script>
+</body>
+</html>
