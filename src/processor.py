@@ -18,6 +18,7 @@ from .validator import DocumentValidator
 from .output_formatter import OutputFormatter
 from .error_handler import ErrorHandler
 from .models import DocumentProcessingResult, ProcessingError
+from .auditor_agent import ClinicalAuditorAgent
 
 logger = logging.getLogger(__name__)
 
@@ -47,13 +48,9 @@ class MedicalDocumentProcessor:
         self.formatter = OutputFormatter()
         self.error_handler = ErrorHandler(logger=logger)
 
-        if not mock_mode:
-            # These require a valid Anthropic API key.
-            self.classifier = DocumentClassifier(api_key=api_key)
-            self.extractor = FieldExtractor()
-        else:
-            self.classifier = None
-            self.extractor = None
+        self.classifier = DocumentClassifier()
+        self.extractor = FieldExtractor()
+        self.auditor_agent = ClinicalAuditorAgent()
 
     def process_document(
         self,
@@ -106,12 +103,22 @@ class MedicalDocumentProcessor:
                 quality_warnings=quality_warnings
             )
 
+            # Step 4.5: Clinical Audit Agent
+            # Always run the auditor agent to hit the FRIDA API
+            auditor_decision = self.auditor_agent.evaluate(
+                document_type=doc_type,
+                extracted_fields=extracted_fields,
+                validation_issues=issues
+            )
+
             # Step 5: Format output
             result = self.formatter.format_result(
                 document_type=doc_type,
                 classification_confidence=classification_confidence,
                 extracted_fields=extracted_fields,
-                inconsistencies_and_missing=issues
+                inconsistencies_and_missing=issues,
+                veredicto_auditoria=auditor_decision.get("veredicto"),
+                justificacion_auditoria=auditor_decision.get("justificacion")
             )
 
             logger.info(

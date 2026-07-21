@@ -13,7 +13,11 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, render_template, request, flash
+
+# Load environment variables from .env file
+load_dotenv()
 
 from src.processor import MedicalDocumentProcessor
 from src.renewal_api import register_renewal_blueprint
@@ -31,11 +35,8 @@ app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB
 
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
 
-# Initialize processor: use real models if an Anthropic API key is available,
-# otherwise fall back to mock mode so the demo works without API keys.
-mock_mode = os.environ.get("ANTHROPIC_API_KEY") is None
-# In mock mode we need OCR so the keyword-based classifier can inspect content.
-processor = MedicalDocumentProcessor(use_ocr=mock_mode, mock_mode=mock_mode)
+# Initialize processor: use FRIDA for both extraction and auditing
+processor = MedicalDocumentProcessor(use_ocr=True, mock_mode=False)
 app.config["DOCUMENT_PROCESSOR"] = processor
 
 

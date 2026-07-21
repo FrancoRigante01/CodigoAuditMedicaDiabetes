@@ -6,7 +6,7 @@ Classifies documents into: formulario_diabetes, laboratorio, estudio_diagnostico
 import logging
 import re
 from typing import Tuple
-from anthropic import Anthropic
+import requests
 
 from .models import DOCUMENT_TYPES
 
@@ -14,18 +14,18 @@ logger = logging.getLogger(__name__)
 
 
 class DocumentClassifier:
-    """Classifies medical documents using Claude's vision capabilities."""
+    """Classifies medical documents using FRIDA API."""
     
     DOCUMENT_TYPES_ENUM = list(DOCUMENT_TYPES.keys())
     
     def __init__(self, api_key: str = None):
         """
-        Initialize the classifier with Claude API.
-        
-        Args:
-            api_key: Anthropic API key (uses ANTHROPIC_API_KEY env var if not provided)
+        Initialize the classifier.
         """
-        self.client = Anthropic()
+        import os
+        self.api_url = "https://frida.azure-api.net/frida-app-service-llm-compatible-api/v1/chat/completions"
+        self.api_key = os.environ.get("FRIDA_API_KEY", "")
+        self.model_name = "SELENE-CIPHER"
         self.classification_history = []
     
     def classify_document(
@@ -54,7 +54,7 @@ class DocumentClassifier:
             extracted_text, metadata
         )
         
-        # Prepare message for Claude
+        # Prepare message for FRIDA (OpenAI compatible format)
         message_content = [
             {
                 "type": "text",
@@ -69,29 +69,48 @@ class DocumentClassifier:
                     import base64
                     b64_image = base64.standard_b64encode(img_bytes).decode("utf-8")
                     message_content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": b64_image
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{b64_image}"
                         }
                     })
                 except Exception as e:
                     logger.warning(f"Failed to add image {idx} to classification: {e}")
         
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "Ocp-Apim-Subscription-Key": self.api_key
+        }
+
+        payload = {
+            "model": self.model_name,
+            "user_id": "classifier_demo",
+            "email": "demo@sancorsalud.com.ar",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": message_content
+                }
+            ],
+            "max_tokens": 500,
+            "temperature": 0.2
+        }
+        
         try:
-            response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=500,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": message_content
-                    }
-                ]
-            )
+            logger.info("Enviando solicitud a FRIDA API para clasificación...")
+            response = requests.post(self.api_url, headers=headers, json=payload, timeout=45)
+            if not response.ok:
+                logger.error(f"FRIDA API Error {response.status_code}: {response.text}")
+            response.raise_for_status()
             
-            result_text = response.content[0].text
+            response_json = response.json()
+            if "choices" in response_json and len(response_json["choices"]) > 0:
+                result_text = response_json["choices"][0]["message"]["content"]
+            else:
+                logger.error(f"Respuesta inesperada de FRIDA API: {response_json}")
+                return "estudio_diagnostico", 20
+                
             doc_type, confidence = self._parse_classification_response(result_text)
             
             self.classification_history.append({

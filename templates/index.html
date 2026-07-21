@@ -469,6 +469,13 @@
                 <div class="result-title">Resultado de la auditoría</div>
                 <div class="filename" id="result-filename"></div>
             </div>
+            
+            <div id="verdict-box" style="display: none; padding: 16px; margin-bottom: 16px; border-radius: var(--radius);">
+                <h3 style="margin-top:0;">Veredicto de IA Auditora</h3>
+                <div id="verdict-status" style="font-weight:bold; font-size: 1.2rem; margin-bottom:8px;"></div>
+                <div id="verdict-justification"></div>
+            </div>
+            
             <div class="json-tree" id="json-tree"></div>
         </div>
 
@@ -699,6 +706,33 @@
                                 return;
                             }
                             resultFilenameEl.textContent = serverFilename.textContent;
+                            
+                            const verdictBox = document.getElementById('verdict-box');
+                            const verdictStatus = document.getElementById('verdict-status');
+                            const verdictJustification = document.getElementById('verdict-justification');
+                            
+                            if (parsed.veredicto_auditoria) {
+                                verdictBox.style.display = 'block';
+                                verdictStatus.textContent = parsed.veredicto_auditoria;
+                                verdictJustification.textContent = parsed.justificacion_auditoria || '';
+                                
+                                if (parsed.veredicto_auditoria === 'APROBADO' || parsed.veredicto_auditoria === 'MOCK_APROBADO') {
+                                    verdictBox.style.backgroundColor = '#d1fae5';
+                                    verdictBox.style.color = '#065f46';
+                                    verdictBox.style.border = '1px solid #10b981';
+                                } else if (parsed.veredicto_auditoria === 'RECHAZADO') {
+                                    verdictBox.style.backgroundColor = '#fee2e2';
+                                    verdictBox.style.color = '#991b1b';
+                                    verdictBox.style.border = '1px solid #ef4444';
+                                } else {
+                                    verdictBox.style.backgroundColor = '#fef3c7';
+                                    verdictBox.style.color = '#92400e';
+                                    verdictBox.style.border = '1px solid #f59e0b';
+                                }
+                            } else {
+                                verdictBox.style.display = 'none';
+                            }
+                            
                             jsonTreeEl.innerHTML = renderJsonTree(parsed);
                             resultCard.style.display = 'block';
                             showAlert('Documento auditado correctamente.', 'success', alertContainer);

@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Dict, Tuple, List
 import base64
-from anthropic import Anthropic
+import requests
 
 from .models import DOCUMENT_TYPES, ExtractedField
 
@@ -18,8 +18,11 @@ class FieldExtractor:
     """Extracts fields from medical documents with per-field confidence scoring."""
     
     def __init__(self):
-        """Initialize the field extractor with Claude API."""
-        self.client = Anthropic()
+        """Initialize the field extractor."""
+        import os
+        self.api_url = "https://frida.azure-api.net/frida-app-service-llm-compatible-api/v1/chat/completions"
+        self.api_key = os.environ.get("FRIDA_API_KEY", "")
+        self.model_name = "SELENE-CIPHER"
         self.extraction_history = []
     
     def extract_fields(
@@ -61,7 +64,7 @@ class FieldExtractor:
             document_type, extracted_text, required_fields, optional_fields, text_legibility_score
         )
         
-        # Prepare message for Claude
+        # Prepare message for FRIDA
         message_content = [
             {
                 "type": "text",
@@ -75,29 +78,49 @@ class FieldExtractor:
                 try:
                     b64_image = base64.standard_b64encode(img_bytes).decode("utf-8")
                     message_content.append({
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": "image/png",
-                            "data": b64_image
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{b64_image}"
                         }
                     })
                 except Exception as e:
                     logger.warning(f"Failed to add image {idx} to extraction: {e}")
         
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "Ocp-Apim-Subscription-Key": self.api_key
+        }
+
+        payload = {
+            "model": self.model_name,
+            "user_id": "extractor_demo",
+            "email": "demo@sancorsalud.com.ar",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": message_content
+                }
+            ],
+            "max_tokens": 2000,
+            "temperature": 0.2
+        }
+
         try:
-            response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
-                max_tokens=2000,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": message_content
-                    }
-                ]
-            )
+            logger.info("Enviando solicitud a FRIDA API para extracción...")
+            response = requests.post(self.api_url, headers=headers, json=payload, timeout=60)
+            if not response.ok:
+                logger.error(f"FRIDA API Error {response.status_code}: {response.text}")
+            response.raise_for_status()
             
-            result_text = response.content[0].text
+            response_json = response.json()
+            if "choices" in response_json and len(response_json["choices"]) > 0:
+                result_text = response_json["choices"][0]["message"]["content"]
+                logger.error(f"====== FRIDA EXTRACTION RESPONSE ======\n{result_text}\n=======================================")
+            else:
+                logger.error(f"Respuesta inesperada de FRIDA API: {response_json}")
+                return self._create_empty_extraction(all_fields)
+            
             extracted_fields = self._parse_extraction_response(
                 result_text, required_fields, optional_fields, 
                 classification_confidence, text_legibility_score
@@ -233,22 +256,22 @@ confidence scores across all fields should reflect this uncertainty."""
         all_fields = required_fields + optional_fields
         
         # Split response into field blocks
-        field_blocks = re.split(r'(?:^|\\n)FIELD:\\s+', response_text, flags=re.MULTILINE)
+        field_blocks = re.split(r'(?:^|\n)FIELD:\s+', response_text, flags=re.MULTILINE)
         
         for block in field_blocks[1:]:  # Skip first empty split
             try:
-                lines = block.strip().split('\\n')
+                lines = block.strip().split('\n')
                 field_name = lines[0].strip()
                 
                 # Extract value
                 value = "NOT_FOUND"
-                value_match = re.search(r'VALUE:\\s*(.+?)(?=\\nCONFIDENCE:|$)', block, re.DOTALL)
+                value_match = re.search(r'VALUE:\s*(.+?)(?=\nCONFIDENCE:|$)', block, re.DOTALL)
                 if value_match:
                     value = value_match.group(1).strip()
                 
                 # Extract confidence
                 confidence = 20  # Default low confidence if not found
-                conf_match = re.search(r'CONFIDENCE:\\s*(\\d+)', block)
+                conf_match = re.search(r'CONFIDENCE:\s*(\d+)', block)
                 if conf_match:
                     confidence = int(conf_match.group(1))
                     confidence = max(0, min(100, confidence))  # Clamp to 0-100

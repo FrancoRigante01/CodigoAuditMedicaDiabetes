@@ -24,7 +24,9 @@ class OutputFormatter:
         document_type: str,
         classification_confidence: int,
         extracted_fields: Dict[str, ExtractedField],
-        inconsistencies_and_missing: List[str]
+        inconsistencies_and_missing: List[str],
+        veredicto_auditoria: Optional[str] = None,
+        justificacion_auditoria: Optional[str] = None
     ) -> DocumentProcessingResult:
         """
         Format processing result into the required structure.
@@ -46,7 +48,9 @@ class OutputFormatter:
             tipo_documento=document_type,
             confianza_clasificacion=classification_confidence,
             campos_extraidos=extracted_fields,
-            faltantes_o_inconsistencias=inconsistencies_and_missing
+            faltantes_o_inconsistencias=inconsistencies_and_missing,
+            veredicto_auditoria=veredicto_auditoria,
+            justificacion_auditoria=justificacion_auditoria
         )
         
         logger.info(
@@ -103,7 +107,7 @@ class OutputFormatter:
         
         Handles Pydantic model serialization.
         """
-        return {
+        data = {
             "tipo_documento": result.tipo_documento,
             "confianza_clasificacion": result.confianza_clasificacion,
             "campos_extraidos": {
@@ -115,6 +119,13 @@ class OutputFormatter:
             },
             "faltantes_o_inconsistencias": result.faltantes_o_inconsistencias
         }
+        
+        if result.veredicto_auditoria:
+            data["veredicto_auditoria"] = result.veredicto_auditoria
+        if result.justificacion_auditoria:
+            data["justificacion_auditoria"] = result.justificacion_auditoria
+            
+        return data
     
     def validate_result(self, result: DocumentProcessingResult) -> bool:
         """

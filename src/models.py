@@ -32,6 +32,14 @@ class DocumentProcessingResult(BaseModel):
         default_factory=list,
         description="List of missing required fields or detected inconsistencies"
     )
+    veredicto_auditoria: Optional[str] = Field(
+        None,
+        description="Clinical verdict emitted by the Auditor Agent (APROBADO, RECHAZADO, REQUIERE_INFO, etc.)"
+    )
+    justificacion_auditoria: Optional[str] = Field(
+        None,
+        description="Detailed justification for the clinical verdict"
+    )
 
     class Config:
         json_schema_extra = {
@@ -42,7 +50,9 @@ class DocumentProcessingResult(BaseModel):
                     "diagnostico": {"valor": "Diabetes tipo 2", "confianza": 90},
                     "medicacion_solicitada": {"valor": "Metformina 500mg", "confianza": 85}
                 },
-                "faltantes_o_inconsistencias": ["Firma del médico ilegible"]
+                "faltantes_o_inconsistencias": ["Firma del médico ilegible"],
+                "veredicto_auditoria": "REQUIERE_INFO",
+                "justificacion_auditoria": "Falta la firma del profesional tratante."
             }
         }
 
