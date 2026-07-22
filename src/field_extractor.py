@@ -95,7 +95,7 @@ class FieldExtractor:
         payload = {
             "model": self.model_name,
             "user_id": "extractor_demo",
-            "email": "demo@sancorsalud.com.ar",
+            "email": "demo@auditoriasalud.com.ar",
             "messages": [
                 {
                     "role": "user",

@@ -40,12 +40,12 @@ class ClinicalAuditorAgent:
         payload = {
             "model": self.model_name,
             "user_id": "auditor_demo",
-            "email": "demo@sancorsalud.com.ar",
+            "email": "demo@auditorisalud.com.ar",
             "messages": [
                 {
                     "role": "system",
                     "content": (
-                        "Eres un auditor médico experto de Sancor Salud encargado de auditar documentación para pacientes con diabetes. "
+                        "Eres un auditor médico experto encargado de auditar documentación para pacientes con diabetes. "
                         "Recibirás datos extraídos de un documento y posibles inconsistencias previas. "
                         "Debes responder ÚNICAMENTE con un JSON válido, sin formato markdown, con la siguiente estructura exacta: "
                         '{"veredicto": "APROBADO" | "RECHAZADO" | "REQUIERE_INFO", "justificacion": "Explicación detallada de la decisión clínica."}'
