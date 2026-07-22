@@ -45,10 +45,8 @@ class ClinicalAuditorAgent:
                 {
                     "role": "system",
                     "content": (
-                        "Eres un auditor médico experto encargado de auditar documentación para pacientes con diabetes. "
-                        "Recibirás datos extraídos de un documento y posibles inconsistencias previas. "
-                        "Debes responder ÚNICAMENTE con un JSON válido, sin formato markdown, con la siguiente estructura exacta: "
-                        '{"veredicto": "APROBADO" | "RECHAZADO" | "REQUIERE_INFO", "justificacion": "Explicación detallada de la decisión clínica."}'
+                        "Eres un auditor médico experto especializado en diabetes mellitus. "
+                        "Tu tarea es realizar una auditoría exhaustiva siguiendo estrictamente el formato y las reglas solicitadas por el usuario."
                     )
                 },
                 {
@@ -61,7 +59,7 @@ class ClinicalAuditorAgent:
 
         try:
             logger.info("Enviando solicitud a FRIDA API para auditoría clínica...")
-            response = requests.post(self.api_url, headers=headers, json=payload, timeout=30)
+            response = requests.post(self.api_url, headers=headers, json=payload, timeout=120)
             
             # Comprobar si el request fue exitoso
             if not response.ok:
@@ -73,15 +71,22 @@ class ClinicalAuditorAgent:
             if "choices" in response_json and len(response_json["choices"]) > 0:
                 agent_content = response_json["choices"][0]["message"]["content"]
                 
-                # Intentar parsear el JSON de la respuesta
+                # La respuesta del agente está en formato Markdown.
                 agent_content = agent_content.strip()
-                if agent_content.startswith("```json"):
-                    agent_content = agent_content[7:]
-                if agent_content.endswith("```"):
-                    agent_content = agent_content[:-3]
                 
-                decision = json.loads(agent_content.strip())
-                return decision
+                # Extraer veredicto de la sección Recomendación si es posible
+                veredicto = "REVISIÓN MANUAL"
+                if "APROBABLE CON OBSERVACIONES" in agent_content:
+                    veredicto = "APROBABLE CON OBSERVACIONES"
+                elif "NO APROBABLE" in agent_content:
+                    veredicto = "NO APROBABLE"
+                elif "APROBABLE" in agent_content:
+                    veredicto = "APROBABLE"
+                
+                return {
+                    "veredicto": veredicto,
+                    "justificacion": agent_content
+                }
             else:
                 logger.error(f"Respuesta inesperada de FRIDA API: {response_json}")
                 return self._fallback_decision("Error en la estructura de respuesta de la API.")
@@ -90,9 +95,6 @@ class ClinicalAuditorAgent:
             error_details = getattr(e.response, 'text', str(e))
             logger.error(f"Error de conexión con FRIDA API: {e} - Details: {error_details}")
             return self._fallback_decision(f"Error 400. Detalles de la API: {error_details}")
-        except json.JSONDecodeError as e:
-            logger.error(f"Error parseando la respuesta del Agente: {e} - Content: {agent_content}")
-            return self._fallback_decision("El Agente no respondió con un JSON válido.")
         except Exception as e:
             logger.error(f"Error desconocido en ClinicalAuditorAgent: {e}")
             return self._fallback_decision(str(e))
@@ -113,11 +115,15 @@ class ClinicalAuditorAgent:
         issues_str = "\n".join([f"- {i}" for i in validation_issues]) if validation_issues else "Ninguna detectada previamente."
 
         return f"""
-Eres un Auditor Médico Experto especializado en evaluación de solicitudes de medicación e insumos, en particular para Diabetes.
-Tu objetivo es tomar la información extraída automáticamente de un documento médico y decidir si se debe APROBAR, RECHAZAR, o si REQUIERE_INFO adicional.
+Actúa como un médico auditor especializado en diabetes mellitus en Argentina, con amplio conocimiento de los requisitos del Ministerio de Salud de la Nación para la renovación del Certificado de Diabetes.
+ 
+Tu función NO es emitir el certificado, sino realizar una auditoría técnica de la documentación presentada y determinar si el expediente está completo o qué información falta.
+ 
+Analiza toda la documentación clínica que te proporcionaré (PDF, imágenes, laboratorio, recetas, historia clínica, certificados, etc.).
 
-FECHA ACTUAL DEL SISTEMA: {current_date_str} (Usa esta fecha para validar la antigüedad o vigencia de los documentos).
+FECHA ACTUAL DEL SISTEMA: {current_date_str}
 
+--- INFORMACIÓN EXTRAÍDA DEL DOCUMENTO ---
 Tipo de Documento: {document_type}
 
 Campos Extraídos:
@@ -125,11 +131,119 @@ Campos Extraídos:
 
 Inconsistencias Detectadas por Validación Inicial:
 {issues_str}
-
-Reglas de Auditoría:
-1. Si faltan datos críticos o hay inconsistencias clínicas graves, el veredicto debe ser "RECHAZADO" o "REQUIERE_INFO".
-2. Si el documento parece completo, los datos son coherentes clínicamente y no hay alertas críticas, el veredicto es "APROBADO".
-3. Proporciona una justificación médica o administrativa clara para la decisión.
+------------------------------------------
+ 
+Debes responder utilizando el siguiente formato:
+ 
+# 1. Resumen del paciente
+- Edad:
+- Sexo:
+- Diagnóstico:
+- Tipo de diabetes (1, 2, LADA, MODY, gestacional, otra):
+- Años de evolución:
+- Tratamiento actual:
+ 
+# 2. Documentación recibida
+Indica si está presente o ausente:
+ 
+□ Formulario oficial
+□ Historia clínica actualizada
+□ Certificado del médico tratante
+□ Estudios de laboratorio
+□ HbA1c
+□ Glucemia
+□ Función renal
+□ Microalbuminuria
+□ Fondo de ojo
+□ Evaluación cardiovascular
+□ Evaluación neurológica
+□ Recetas
+□ Insulina
+□ Sensores
+□ Bomba
+□ Tiras reactivas
+□ Otros
+ 
+# 3. Validación documental
+ 
+Para cada documento indicar:
+ 
+- Fecha
+- Vigencia
+- Coherencia clínica
+- Si corresponde al paciente
+- Si es suficiente para la renovación
+ 
+# 4. Motor de reglas
+ 
+Verifica:
+ 
+- Consistencia entre diagnóstico y tratamiento.
+- Consistencia entre historia clínica y medicación.
+- Concordancia entre HbA1c y evolución.
+- Fechas vigentes.
+- Estudios vencidos.
+- Documentación incompleta.
+- Firmas.
+- Sellos.
+- Matrícula profesional.
+- Diagnóstico correctamente documentado.
+- Justificación del tratamiento solicitado.
+ 
+# 5. Hallazgos
+ 
+Clasificar cada hallazgo como:
+ 
+CRÍTICO
+IMPORTANTE
+MENOR
+ 
+Explicar por qué.
+ 
+# 6. Documentación faltante
+ 
+Generar una lista exacta de todo lo que falta para poder renovar el certificado.
+ 
+# 7. Riesgos
+ 
+Indicar:
+ 
+- documentación vencida
+- documentos ilegibles
+- inconsistencias
+- datos faltantes
+- posible duplicidad
+- información contradictoria
+ 
+# 8. Recomendación
+ 
+Clasificar el expediente en UNA sola categoría:
+ 
+APROBABLE
+ 
+APROBABLE CON OBSERVACIONES
+ 
+NO APROBABLE
+ 
+Justificar la decisión.
+ 
+# 9. Explicación para el auditor
+ 
+Redactar un resumen en lenguaje profesional (máximo 10 líneas).
+ 
+# 10. Explicación para el paciente
+ 
+Redactar un mensaje claro y sencillo indicando qué documentación debe presentar si corresponde.
+ 
+Reglas:
+ 
+- No inventes información.
+- Si un dato no está presente, indicar "No consta en la documentación".
+- Diferenciar hechos de inferencias.
+- Nunca asumir diagnósticos.
+- Basar todas las conclusiones únicamente en la documentación aportada.
+- Señalar cualquier inconsistencia clínica relevante.
+- Priorizar la normativa vigente del Ministerio de Salud de Argentina.
 """
 
     def _fallback_decision(self, reason: str) -> Dict[str, Any]:
