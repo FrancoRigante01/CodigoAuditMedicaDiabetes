@@ -1,0 +1,58 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Patient {
+  id               Int           @id @default(autoincrement())
+  name             String
+  dni              String        @unique
+  age              Int?
+  clinical_history String?
+  status           String?       @default("PENDIENTE") // PENDIENTE, APROBADO, RECHAZADO
+  createdAt        DateTime      @default(now())
+
+  documents        Document[]
+  comments         Comment[]
+  auditReview      AuditReview?
+}
+
+model Document {
+  id               Int      @id @default(autoincrement())
+  patientId        Int
+  filename         String
+  filePath         String
+  docType          String?
+  extractedText    String?
+  reliabilityScore Float?   @default(1.0)
+  status           String?  @default("CARGADO")
+  uploadedAt       DateTime @default(now())
+
+  patient          Patient  @relation(fields: [patientId], references: [id])
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+  patientId   Int
+  authorRole  String
+  text        String
+  createdAt   DateTime @default(now())
+
+  patient     Patient  @relation(fields: [patientId], references: [id])
+}
+
+model AuditReview {
+  id            Int      @id @default(autoincrement())
+  patientId     Int      @unique
+  aiSuggestion  String?
+  aiConfidence  Float?
+  finalVerdict  String?
+  auditorNotes  String?
+  reviewedAt    DateTime @default(now())
+
+  patient       Patient  @relation(fields: [patientId], references: [id])
+}
