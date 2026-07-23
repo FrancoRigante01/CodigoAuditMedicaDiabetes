@@ -40,3 +40,8 @@ export const auditPatient = async (patientId: number, action: string, notes: str
   const res = await api.post(`/patients/${patientId}/audit`, { action, notes });
   return res.data;
 };
+
+export const renewPatient = async (patientId: number) => {
+  const res = await api.post(`/patients/${patientId}/renew`);
+  return res.data;
+};

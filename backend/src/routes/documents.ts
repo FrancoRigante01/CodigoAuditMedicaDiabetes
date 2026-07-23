@@ -47,32 +47,42 @@ router.post('/', upload.array('documents'), async (req, res) => {
       uploadedDocs.push(doc);
     }
 
-    // 2. Fetch all documents for this patient to combine them
+    // 2. Fetch all active documents for this patient to combine them
     const allPatientDocs = await prisma.document.findMany({
-      where: { patientId: parseInt(patientId as string) }
+      where: { patientId: parseInt(patientId as string), isArchived: false }
     });
 
     const allTexts = allPatientDocs
       .map((d: any) => d.extractedText)
       .filter((t): t is string => !!t);
 
-    // 3. Evaluate all documents together
+    // 3. Evaluate all active documents together
     if (allTexts.length > 0) {
       const result = await processor.evaluateMultipleDocuments(allTexts);
 
       if (result.veredicto_auditoria) {
-        await prisma.auditReview.upsert({
-          where: { patientId: parseInt(patientId as string) },
-          update: {
-            aiSuggestion: result.justificacion_auditoria,
-            aiConfidence: result.confianza_clasificacion / 100.0
-          },
-          create: {
-            patientId: parseInt(patientId as string),
-            aiSuggestion: result.justificacion_auditoria,
-            aiConfidence: result.confianza_clasificacion / 100.0
-          }
+        const activeReview = await prisma.auditReview.findFirst({
+          where: { patientId: parseInt(patientId as string), isArchived: false }
         });
+
+        if (activeReview) {
+           await prisma.auditReview.update({
+             where: { id: activeReview.id },
+             data: {
+               aiSuggestion: result.justificacion_auditoria,
+               aiConfidence: result.confianza_clasificacion / 100.0
+             }
+           });
+        } else {
+           await prisma.auditReview.create({
+             data: {
+               patientId: parseInt(patientId as string),
+               aiSuggestion: result.justificacion_auditoria,
+               aiConfidence: result.confianza_clasificacion / 100.0,
+               isArchived: false
+             }
+           });
+        }
       }
     }
 

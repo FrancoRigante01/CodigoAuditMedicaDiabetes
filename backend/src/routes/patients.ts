@@ -42,9 +42,13 @@ router.get('/:id', async (req, res) => {
   const patient = await prisma.patient.findUnique({
     where: { id: parseInt(id) },
     include: {
-      documents: true,
+      documents: {
+        orderBy: { uploadedAt: 'desc' }
+      },
       comments: true,
-      auditReview: true,
+      auditReviews: {
+        orderBy: { reviewedAt: 'desc' }
+      },
     }
   });
 
@@ -97,18 +101,52 @@ router.post('/:id/audit', async (req, res) => {
   if (action === 'RECHAZAR') {
     updateData.aiSuggestion = null;
     updateData.aiConfidence = null;
-    await prisma.document.deleteMany({
-      where: { patientId }
+  }
+
+  const activeReview = await prisma.auditReview.findFirst({
+    where: { patientId, isArchived: false }
+  });
+
+  if (activeReview) {
+    await prisma.auditReview.update({
+      where: { id: activeReview.id },
+      data: updateData
+    });
+  } else {
+    await prisma.auditReview.create({
+      data: { patientId, ...updateData }
     });
   }
 
-  await prisma.auditReview.upsert({
-    where: { patientId },
-    update: updateData,
-    create: { patientId, ...updateData }
-  });
-
   res.json({ message: `Patient ${newStatus}` });
+});
+
+// Renew patient documentation
+router.post('/:id/renew', async (req, res) => {
+  const { id } = req.params;
+  const patientId = parseInt(id);
+
+  try {
+    await prisma.patient.update({
+      where: { id: patientId },
+      data: { status: 'RENOVACION_PENDIENTE' }
+    });
+
+    await prisma.document.updateMany({
+      where: { patientId, isArchived: false },
+      data: { isArchived: true }
+    });
+
+    await prisma.auditReview.updateMany({
+      where: { patientId, isArchived: false },
+      data: { isArchived: true }
+    });
+
+    res.json({ message: 'Patient renewed successfully' });
+  } catch (error) {
+    console.error('Error renewing patient:', error);
+    res.status(500).json({ error: 'Error renewing patient' });
+  }
 });
 
 export default router;

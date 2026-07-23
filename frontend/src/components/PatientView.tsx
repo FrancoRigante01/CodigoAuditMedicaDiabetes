@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UploadCloud, FileText, Info, CheckCircle, X, UserPlus, Users } from 'lucide-react';
-import { getPatients, createPatient, getPatientDetail, uploadDocuments } from '../services/api';
+import { getPatients, createPatient, getPatientDetail, uploadDocuments, renewPatient } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 
 export const PatientView = () => {
@@ -13,16 +13,21 @@ export const PatientView = () => {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [patientDocuments, setPatientDocuments] = useState<any[]>([]);
 
+  const [patientDetail, setPatientDetail] = useState<any>(null);
+
   const loadPatientDetails = async () => {
     if (selectedPatientId) {
       try {
         const details = await getPatientDetail(selectedPatientId);
+        setPatientDetail(details);
         setPatientDocuments(details.documents || []);
       } catch (e) {
         console.error("Error loading patient details:", e);
+        setPatientDetail(null);
         setPatientDocuments([]);
       }
     } else {
+      setPatientDetail(null);
       setPatientDocuments([]);
     }
   };
@@ -30,6 +35,9 @@ export const PatientView = () => {
   useEffect(() => {
     loadPatientDetails();
   }, [selectedPatientId]);
+
+  const activeDocs = patientDocuments.filter(d => !d.isArchived);
+  const archivedDocs = patientDocuments.filter(d => d.isArchived);
   const [newPatientForm, setNewPatientForm] = useState({ name: '', dni: '', age: '' });
   const [creating, setCreating] = useState(false);
 
@@ -74,6 +82,19 @@ export const PatientView = () => {
     } finally {
       setUploading(false);
       setFiles([]);
+    }
+  };
+
+  const handleRenew = async () => {
+    if (!selectedPatientId) return;
+    if (!confirm('¿Desea iniciar un nuevo ciclo de renovación? Sus documentos actuales pasarán al historial.')) return;
+    try {
+      await renewPatient(selectedPatientId);
+      setFeedback('Ciclo de renovación iniciado con éxito. Puede subir nueva documentación.');
+      await loadPatientDetails();
+      await loadPatients();
+    } catch (error) {
+      setFeedback('Error al iniciar la renovación.');
     }
   };
 
@@ -130,15 +151,27 @@ export const PatientView = () => {
             <div>
               <label className="block text-sm font-medium mb-2">Seleccionar Paciente:</label>
               <select
-                className="w-full bg-background border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                className="w-full bg-background border border-gray-200 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none mb-4"
                 value={selectedPatientId || ''}
                 onChange={(e) => setSelectedPatientId(Number(e.target.value))}
               >
                 <option value="">Seleccione un paciente...</option>
                 {patients.map(p => (
-                  <option key={p.id} value={p.id}>{p.name} - {p.dni}</option>
+                  <option key={p.id} value={p.id}>{p.name} - {p.dni} ({p.status})</option>
                 ))}
               </select>
+              
+              {patientDetail && ['APROBADO', 'APROBADO PARCIALMENTE', 'RECHAZADO'].includes(patientDetail.status) && (
+                <div className="bg-green-50 border border-green-100 p-4 rounded-lg flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-green-800 text-sm">Estado actual: {patientDetail.status}</p>
+                    <p className="text-xs text-green-600 mt-1">¿Necesitas renovar tu solicitud de cobertura?</p>
+                  </div>
+                  <button onClick={handleRenew} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    Iniciar Renovación
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -261,22 +294,39 @@ export const PatientView = () => {
       </div>
 
       <div className="premium-card">
-        <h3 className="text-lg font-semibold mb-4">Mis Documentos Subidos</h3>
-        <div className="flex flex-col gap-3">
-          {patientDocuments.length === 0 ? (
-            <p className="text-sm text-gray-500">No hay documentos subidos.</p>
+        <h3 className="text-lg font-semibold mb-4">Mis Documentos Subidos (Activos)</h3>
+        <div className="flex flex-col gap-3 mb-6">
+          {activeDocs.length === 0 ? (
+            <p className="text-sm text-gray-500">No hay documentos activos para este ciclo.</p>
           ) : (
-            patientDocuments.map((doc: any) => (
-              <div key={doc.id} className="flex items-center gap-3 p-3 border border-gray-100 rounded-lg">
-                <FileText className="text-gray-400" />
+            activeDocs.map((doc: any) => (
+              <div key={doc.id} className="flex items-center gap-3 p-3 border border-blue-100 bg-blue-50/30 rounded-lg">
+                <FileText className="text-blue-400" />
                 <div>
-                  <p className="font-medium text-sm">{doc.filename}</p>
-                  <p className="text-xs text-text-muted">Estado: {doc.status || 'CARGADO'}</p>
+                  <p className="font-medium text-sm text-blue-900">{doc.filename}</p>
+                  <p className="text-xs text-blue-600">Estado: {doc.status || 'CARGADO'}</p>
                 </div>
               </div>
             ))
           )}
         </div>
+
+        {archivedDocs.length > 0 && (
+          <>
+            <h3 className="text-lg font-semibold mb-4 border-t pt-6">Historial de Renovaciones</h3>
+            <div className="flex flex-col gap-3">
+              {archivedDocs.map((doc: any) => (
+                <div key={doc.id} className="flex items-center gap-3 p-3 border border-gray-100 bg-gray-50 rounded-lg opacity-75 hover:opacity-100 transition-opacity">
+                  <FileText className="text-gray-400" />
+                  <div>
+                    <p className="font-medium text-sm text-gray-700">{doc.filename}</p>
+                    <p className="text-xs text-gray-500">Subido el: {new Date(doc.uploadedAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

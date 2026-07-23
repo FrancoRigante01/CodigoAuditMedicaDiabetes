@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Eye, ShieldCheck, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { getPatients, getPatientDetail, auditPatient } from '../services/api';
 
@@ -45,7 +46,7 @@ export const AuditorView = () => {
         <div className="premium-card text-center p-4">
           <p className="text-sm text-text-muted font-medium mb-1">Pendientes</p>
           <p className="text-2xl font-bold text-yellow-600">
-            {patients.filter(p => p.status === 'PENDIENTE').length}
+            {patients.filter(p => p.status === 'PENDIENTE' || p.status === 'RENOVACION_PENDIENTE').length}
           </p>
         </div>
         <div className="premium-card text-center p-4">
@@ -63,13 +64,13 @@ export const AuditorView = () => {
       </div>
 
       <div className="flex gap-2 mb-4">
-        {['', 'PENDIENTE', 'APROBADO', 'RECHAZADO'].map(f => (
+        {['', 'PENDIENTE', 'RENOVACION_PENDIENTE', 'APROBADO', 'RECHAZADO'].map(f => (
           <button
             key={f}
             onClick={() => setSelectedFilter(f)}
             className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${selectedFilter === f ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
           >
-            {f === '' ? 'Todos' : f}
+            {f === '' ? 'Todos' : (f === 'RENOVACION_PENDIENTE' ? 'RENOVACIÓN' : f)}
           </button>
         ))}
       </div>
@@ -121,9 +122,9 @@ export const AuditorView = () => {
 
             <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <h3 className="font-semibold text-gray-700 mb-3">Documentos y Puntaje</h3>
-                <div className="space-y-3">
-                  {patientDetail.documents?.map((d: any) => (
+                <h3 className="font-semibold text-gray-700 mb-3">Documentos Activos</h3>
+                <div className="space-y-3 mb-6">
+                  {patientDetail.documents?.filter((d: any) => !d.isArchived).map((d: any) => (
                     <div key={d.id} className="p-3 border rounded-lg flex items-center justify-between">
                       <div className="flex items-start gap-3">
                         <FileText className="text-gray-400 mt-1" size={20} />
@@ -138,18 +139,64 @@ export const AuditorView = () => {
                       </a>
                     </div>
                   ))}
-                  {(!patientDetail.documents || patientDetail.documents.length === 0) && (
+                  {(!patientDetail.documents || patientDetail.documents.filter((d: any) => !d.isArchived).length === 0) && (
                     <p className="text-sm text-gray-500 italic">No hay documentos cargados.</p>
                   )}
                 </div>
+
+                {patientDetail.documents?.some((d: any) => d.isArchived) && (
+                  <>
+                    <h3 className="font-semibold text-gray-700 mb-3 border-t pt-4">Historial de Documentos</h3>
+                    <div className="space-y-3">
+                      {patientDetail.documents?.filter((d: any) => d.isArchived).map((d: any) => (
+                        <div key={d.id} className="p-2 border border-gray-100 bg-gray-50 rounded-lg flex items-center justify-between opacity-80">
+                          <div className="flex items-center gap-2">
+                            <FileText className="text-gray-400" size={16} />
+                            <p className="font-medium text-xs text-gray-600">{d.filename}</p>
+                          </div>
+                          <a href={`http://localhost:5000/${d.filePath.replace(/\\/g, '/')}`} target="_blank" rel="noopener noreferrer" className="p-1 text-primary hover:bg-blue-50 rounded-lg transition-colors" title="Abrir Documento">
+                            <Eye size={16} />
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
-              <div className="flex flex-col">
+              <div className="flex flex-col h-full max-h-full">
                 <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                   <CheckCircle2 className="text-green-500" size={18} /> Sugerencia IA (Agente)
                 </h3>
-                <div className="flex-1 bg-linear-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-lg p-4 text-sm text-gray-800 overflow-y-auto whitespace-pre-wrap">
-                  {patientDetail.auditReview?.aiSuggestion || 'No hay evaluación de IA disponible.'}
+                <div className="flex-1 bg-white border border-blue-100 shadow-sm rounded-xl p-6 text-sm text-gray-800 overflow-y-auto">
+                  {(() => {
+                    const activeReview = patientDetail.auditReviews?.find((r: any) => !r.isArchived);
+                    if (activeReview?.aiSuggestion) {
+                      return (
+                        <ReactMarkdown
+                          components={{
+                            h1: ({node, ...props}) => <h1 className="text-xl font-bold text-blue-900 mt-6 mb-3 pb-2 border-b border-blue-100 first:mt-0" {...props} />,
+                            h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-blue-800 mt-5 mb-2 first:mt-0" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-md font-semibold text-blue-700 mt-4 mb-2 first:mt-0" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-gray-700" {...props} />,
+                            ul: ({node, ...props}) => <ul className="mb-4 space-y-2 ml-1" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-2" {...props} />,
+                            li: ({node, ...props}) => (
+                              <li className="flex flex-wrap items-start">
+                                <span className="text-blue-500 mr-2 mt-0.5">•</span>
+                                <span className="flex-1 text-gray-700" {...props} />
+                              </li>
+                            ),
+                            strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                            em: ({node, ...props}) => <em className="italic text-gray-600" {...props} />,
+                          }}
+                        >
+                          {activeReview.aiSuggestion}
+                        </ReactMarkdown>
+                      );
+                    }
+                    return <p className="text-gray-500 italic text-center mt-10">No hay evaluación de IA disponible.</p>;
+                  })()}
                 </div>
               </div>
             </div>

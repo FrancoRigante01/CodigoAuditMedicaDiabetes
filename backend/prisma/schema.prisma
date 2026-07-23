@@ -18,7 +18,7 @@ model Patient {
 
   documents        Document[]
   comments         Comment[]
-  auditReview      AuditReview?
+  auditReviews     AuditReview[]
 }
 
 model Document {
@@ -30,6 +30,7 @@ model Document {
   extractedText    String?
   reliabilityScore Float?   @default(1.0)
   status           String?  @default("CARGADO")
+  isArchived       Boolean? @default(false)
   uploadedAt       DateTime @default(now())
 
   patient          Patient  @relation(fields: [patientId], references: [id])
@@ -47,7 +48,8 @@ model Comment {
 
 model AuditReview {
   id            Int      @id @default(autoincrement())
-  patientId     Int      @unique
+  patientId     Int
+  isArchived    Boolean? @default(false)
   aiSuggestion  String?
   aiConfidence  Float?
   finalVerdict  String?
