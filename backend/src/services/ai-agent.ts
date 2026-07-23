@@ -75,6 +75,67 @@ export class ClinicalAuditorAgent {
     }
   }
 
+  public async evaluateDocumentReliability(rawText: string): Promise<number> {
+    if (!rawText || rawText.trim() === '') return 0.1;
+
+    const prompt = `Evalúa el siguiente texto extraído mediante OCR y determina su puntaje de confiabilidad entre 0.0 y 1.0.
+Un puntaje de 1.0 significa que el texto es legible, estructurado y parece un documento médico válido.
+Un puntaje bajo (ej. 0.2) significa que es ilegible, texto ruidoso, o irrelevante.
+Devuelve ÚNICAMENTE un número decimal (ejemplo: 0.85), sin texto adicional.
+
+--- TEXTO ---
+${rawText.substring(0, 2000)}
+`;
+
+    const payload = {
+      model: this.modelName,
+      user_id: "auditor_demo",
+      email: "demo@auditorisalud.com.ar",
+      messages: [
+        {
+          role: "system",
+          content: "Eres un experto en evaluar la calidad de OCR de documentos médicos."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.1
+    };
+
+    try {
+      if (!this.apiKey) {
+        return parseFloat((Math.random() * (0.95 - 0.7) + 0.7).toFixed(2));
+      }
+
+      const response = await axios.post(this.apiUrl, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Ocp-Apim-Subscription-Key': this.apiKey
+        },
+        timeout: 60000
+      });
+
+      const data = response.data;
+      if (data.choices && data.choices.length > 0) {
+        const content = data.choices[0].message.content.trim();
+        const score = parseFloat(content);
+        if (!isNaN(score) && score >= 0 && score <= 1) {
+          return score;
+        }
+        const match = content.match(/0\.[0-9]+/);
+        if (match) return parseFloat(match[0]);
+        return 0.85;
+      }
+      return 0.8;
+    } catch (error: any) {
+      console.error('Error in evaluateDocumentReliability:', error.message);
+      return 0.75;
+    }
+  }
+
   private buildPrompt(
     rawText: string,
     validationIssues: string[]

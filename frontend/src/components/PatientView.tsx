@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UploadCloud, FileText, Info, CheckCircle, X, UserPlus, Users } from 'lucide-react';
-import { getPatients, createPatient, getPatientDetail } from '../services/api';
+import { getPatients, createPatient, getPatientDetail, uploadDocuments } from '../services/api';
 import { useAppContext } from '../context/AppContext';
 
 export const PatientView = () => {
@@ -66,6 +66,7 @@ export const PatientView = () => {
     if (!selectedPatientId || files.length === 0) return;
     setUploading(true);
     try {
+      await uploadDocuments(selectedPatientId, files);
       setFeedback(`Se subieron y evaluaron ${files.length} archivos con éxito.`);
       await loadPatientDetails();
     } catch (error) {

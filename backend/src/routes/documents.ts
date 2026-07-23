@@ -31,6 +31,7 @@ router.post('/', upload.array('documents'), async (req, res) => {
     // 1. Process and save each new document
     for (const file of files) {
       const rawText = await processor.extractTextFromFile(file.path);
+      const dynamicScore = await processor.evaluateReliability(rawText);
       
       const doc = await prisma.document.create({
         data: {
@@ -39,7 +40,7 @@ router.post('/', upload.array('documents'), async (req, res) => {
           filePath: file.path,
           docType: "Documento Médico",
           extractedText: rawText,
-          reliabilityScore: 0.9,
+          reliabilityScore: dynamicScore,
           status: "CARGADO"
         } as any
       });

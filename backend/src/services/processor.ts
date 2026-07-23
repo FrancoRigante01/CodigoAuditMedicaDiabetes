@@ -60,4 +60,8 @@ export class MedicalDocumentProcessor {
       faltantes_o_inconsistencias: []
     };
   }
+
+  public async evaluateReliability(rawText: string): Promise<number> {
+    return await this.agent.evaluateDocumentReliability(rawText);
+  }
 }
