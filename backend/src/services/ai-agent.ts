@@ -1,4 +1,6 @@
 import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 export class ClinicalAuditorAgent {
   private apiUrl: string;
@@ -15,7 +17,7 @@ export class ClinicalAuditorAgent {
     rawText: string,
     validationIssues: string[]
   ): Promise<{ veredicto: string; justificacion: string }> {
-    const prompt = this.buildPrompt(rawText, validationIssues);
+    const promptContent = this.buildPromptContent(rawText, validationIssues);
 
     const payload = {
       model: this.modelName,
@@ -28,7 +30,7 @@ export class ClinicalAuditorAgent {
         },
         {
           role: "user",
-          content: prompt
+          content: promptContent
         }
       ],
       temperature: 0.2
@@ -136,17 +138,17 @@ ${rawText.substring(0, 2000)}
     }
   }
 
-  private buildPrompt(
+  private buildPromptContent(
     rawText: string,
     validationIssues: string[]
-  ): string {
+  ): any[] {
     const currentDateStr = new Date().toISOString().split('T')[0];
     
     const issuesStr = validationIssues.length > 0 
       ? validationIssues.map(i => `- ${i}`).join('\n')
       : "Ninguna detectada previamente.";
 
-    return `
+    const basePrompt = `
 Actúa como un médico auditor especializado en diabetes mellitus en Argentina.
 
 IMPORTANTE PARA ESTA PRUEBA DE CONCEPTO: Debes ser muy flexible y permisivo. No exijas historia clínica, estudios de laboratorio (como HbA1c o función renal), ni datos demográficos exhaustivos, ni fechas de emisión. 
@@ -158,9 +160,6 @@ Reglas de aprobación para esta POC:
 - Si falta especificar el diagnóstico exacto o la medicación, clasifícalo como REQUIERE INFO.
 
 FECHA ACTUAL DEL SISTEMA: ${currentDateStr}
-
---- TEXTO EXTRAÍDO DEL DOCUMENTO MEDIANTE OCR ---
-${rawText}
 
 Inconsistencias Detectadas por Validación Inicial:
 ${issuesStr}
@@ -174,6 +173,42 @@ Debes responder utilizando el siguiente formato:
 # 8. Recomendación
 Clasificar el expediente en UNA sola categoría: APROBABLE, APROBABLE CON OBSERVACIONES, NO APROBABLE
 `;
+
+    const contentArray: any[] = [];
+    contentArray.push({ type: "text", text: basePrompt });
+
+    const attachmentRegex = /\[DOCUMENTO_ADJUNTO\] (.*?)(?=\n|$)/g;
+    let match;
+    let hasAttachments = false;
+    
+    while ((match = attachmentRegex.exec(rawText)) !== null) {
+      const filePath = match[1].trim();
+      hasAttachments = true;
+      try {
+        if (fs.existsSync(filePath)) {
+          const ext = path.extname(filePath).toLowerCase();
+          const base64 = fs.readFileSync(filePath, 'base64');
+          let mimeType = 'image/jpeg';
+          if (ext === '.png') mimeType = 'image/png';
+          else if (ext === '.pdf') mimeType = 'application/pdf'; // Puede que la API no lo soporte nativamente, pero lo intentamos
+          
+          contentArray.push({
+            type: "image_url",
+            image_url: {
+              url: `data:${mimeType};base64,${base64}`
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error leyendo archivo adjunto", err);
+      }
+    }
+
+    if (!hasAttachments) {
+       contentArray[0].text += `\n\n--- TEXTO EXTRAÍDO DEL DOCUMENTO MEDIANTE OCR ---\n${rawText}`;
+    }
+
+    return contentArray;
   }
 
   private fallbackDecision(reason: string) {

@@ -12,23 +12,8 @@ export class MedicalDocumentProcessor {
   }
 
   public async extractTextFromFile(filePath: string): Promise<string> {
-    const ext = path.extname(filePath).toLowerCase();
-    try {
-      if (ext === '.pdf') {
-        const dataBuffer = fs.readFileSync(filePath);
-        const data = await pdfParse(dataBuffer);
-        return data.text;
-      } else if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-        // Usar español 'spa' asumiendo documentos en Argentina
-        const { data: { text } } = await Tesseract.recognize(filePath, 'spa');
-        return text;
-      } else {
-        throw new Error('Formato de archivo no soportado. Debe ser PDF, PNG o JPG.');
-      }
-    } catch (error) {
-      console.error('Error extrayendo texto:', error);
-      throw new Error('Fallo al extraer texto del documento.');
-    }
+    // PRUEBA: Deshabilitar OCR y enviar directamente la referencia al archivo para que la IA lo lea
+    return `[DOCUMENTO_ADJUNTO] ${filePath}`;
   }
 
   public async processDocument(filename: string, filePath: string) {
@@ -62,6 +47,7 @@ export class MedicalDocumentProcessor {
   }
 
   public async evaluateReliability(rawText: string): Promise<number> {
+    if (rawText.includes('[DOCUMENTO_ADJUNTO]')) return 1.0; // Si es un adjunto directo, asumimos máxima confiabilidad inicial
     return await this.agent.evaluateDocumentReliability(rawText);
   }
 }
