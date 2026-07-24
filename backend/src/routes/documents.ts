@@ -58,28 +58,33 @@ router.post('/', upload.array('documents'), async (req, res) => {
 
     // 3. Evaluate all active documents together
     if (allTexts.length > 0) {
-      const result = await processor.evaluateMultipleDocuments(allTexts);
+      const patient = await prisma.patient.findUnique({
+        where: { id: parseInt(patientId as string) }
+      });
+      const result = await processor.evaluateMultipleDocuments(allTexts, patient);
 
       if (result.veredicto_auditoria) {
         const activeReview = await prisma.auditReview.findFirst({
           where: { patientId: parseInt(patientId as string), isArchived: false }
         });
 
+        const dataToUpdate = {
+          aiSuggestion: result.justificacion_auditoria,
+          aiConfidence: result.confianza_clasificacion / 100.0,
+          extractedData: result.extractedData ? JSON.stringify(result.extractedData) : null
+        };
+
         if (activeReview) {
            await prisma.auditReview.update({
              where: { id: activeReview.id },
-             data: {
-               aiSuggestion: result.justificacion_auditoria,
-               aiConfidence: result.confianza_clasificacion / 100.0
-             }
+             data: dataToUpdate
            });
         } else {
            await prisma.auditReview.create({
              data: {
                patientId: parseInt(patientId as string),
-               aiSuggestion: result.justificacion_auditoria,
-               aiConfidence: result.confianza_clasificacion / 100.0,
-               isArchived: false
+               isArchived: false,
+               ...dataToUpdate
              }
            });
         }

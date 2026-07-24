@@ -12,6 +12,8 @@ model Patient {
   name             String
   dni              String        @unique
   age              Int?
+  plan             String?
+  tipoTramite      String?
   clinical_history String?
   status           String?       @default("PENDIENTE") // PENDIENTE, APROBADO, RECHAZADO
   createdAt        DateTime      @default(now())
@@ -51,6 +53,7 @@ model AuditReview {
   patientId     Int
   isArchived    Boolean? @default(false)
   aiSuggestion  String?
+  extractedData String?
   aiConfidence  Float?
   finalVerdict  String?
   auditorNotes  String?
