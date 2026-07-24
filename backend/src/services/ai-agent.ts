@@ -63,6 +63,8 @@ export class ClinicalAuditorAgent {
           veredicto = "APROBABLE CON OBSERVACIONES";
         } else if (agentContent.includes("NO APROBABLE")) {
           veredicto = "NO APROBABLE";
+        } else if (agentContent.includes("REQUIERE INFO")) {
+          veredicto = "REQUIERE INFO";
         } else if (agentContent.includes("APROBABLE")) {
           veredicto = "APROBABLE";
         }
@@ -171,7 +173,7 @@ Debes responder utilizando el siguiente formato:
 ... (Formato de auditoría esperado omitido por brevedad, asume el mismo prompt de Python)
 ...
 # 8. Recomendación
-Clasificar el expediente en UNA sola categoría: APROBABLE, APROBABLE CON OBSERVACIONES, NO APROBABLE
+Clasificar el expediente en UNA sola categoría: APROBABLE, APROBABLE CON OBSERVACIONES, NO APROBABLE, REQUIERE INFO
 `;
 
     const contentArray: any[] = [];

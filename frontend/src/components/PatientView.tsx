@@ -38,6 +38,10 @@ export const PatientView = () => {
 
   const activeDocs = patientDocuments.filter(d => !d.isArchived);
   const archivedDocs = patientDocuments.filter(d => d.isArchived);
+  
+  const activeReview = patientDetail?.auditReviews?.find((r: any) => !r.isArchived);
+  const requiresInfo = patientDetail?.status === 'REQUIERE INFO' || activeReview?.aiSuggestion?.includes('REQUIERE INFO');
+  
   const [newPatientForm, setNewPatientForm] = useState({ name: '', dni: '', age: '' });
   const [creating, setCreating] = useState(false);
 
@@ -170,6 +174,16 @@ export const PatientView = () => {
                   <button onClick={handleRenew} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
                     Iniciar Renovación
                   </button>
+                </div>
+              )}
+
+              {patientDetail && requiresInfo && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg mt-4 flex items-start gap-3">
+                  <Info className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-red-800 text-sm">Documentación Ilegible o Incompleta</p>
+                    <p className="text-sm text-red-700 mt-1">La documentación es ilegible o poco clara. Por favor, vuelva a cargar el documento asegurándose de que la letra sea entendible y la imagen sea clara.</p>
+                  </div>
                 </div>
               )}
             </div>
