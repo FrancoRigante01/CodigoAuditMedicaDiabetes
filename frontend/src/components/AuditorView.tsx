@@ -165,16 +165,35 @@ export const AuditorView = () => {
               </div>
 
               <div className="flex flex-col h-full max-h-full">
-                <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                  <CheckCircle2 className="text-green-500" size={18} /> Sugerencia IA (Agente)
-                </h3>
-                
                 {(() => {
                   const activeReview = patientDetail.auditReviews?.find((r: any) => !r.isArchived);
+                  let data = null;
+                  let verdictText = '';
+                  
                   if (activeReview?.extractedData) {
                     try {
-                      const data = JSON.parse(activeReview.extractedData);
-                      return (
+                      data = JSON.parse(activeReview.extractedData);
+                      verdictText = data.veredicto || '';
+                    } catch(e){}
+                  }
+                  
+                  let badgeColor = "bg-gray-100 text-gray-800";
+                  if (verdictText === 'APROBABLE') badgeColor = "bg-green-100 text-green-800 border-green-200";
+                  else if (verdictText === 'NO APROBABLE' || verdictText === 'RECHAZADO') badgeColor = "bg-red-100 text-red-800 border-red-200";
+                  else if (verdictText === 'APROBABLE CON OBSERVACIONES' || verdictText === 'REQUIERE INFO') badgeColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
+
+                  return (
+                    <>
+                      <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <CheckCircle2 className="text-green-500" size={18} /> Sugerencia IA (Agente)
+                        {verdictText && (
+                          <span className={`ml-auto px-2 py-0.5 rounded-full text-xs font-bold border ${badgeColor}`}>
+                            {verdictText}
+                          </span>
+                        )}
+                      </h3>
+                      
+                      {data && (
                         <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm">
                           <h4 className="font-semibold text-blue-900 mb-2">Resumen Estructurado</h4>
                           <div className="grid grid-cols-2 gap-2">
@@ -195,67 +214,47 @@ export const AuditorView = () => {
                             </div>
                           </div>
                         </div>
-                      );
-                    } catch (e) {
-                      // fallback to not showing if json is invalid
-                    }
-                  }
-                  return null;
+                      )}
+
+                      <div className="flex-1 bg-white border border-blue-100 shadow-sm rounded-xl p-6 text-sm text-gray-800 overflow-y-auto">
+                        {activeReview?.aiSuggestion ? (
+                          <>
+                            <ReactMarkdown
+                              components={{
+                                h1: ({node, ...props}) => <h1 className="text-xl font-bold text-blue-900 mt-6 mb-3 pb-2 border-b border-blue-100 first:mt-0" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-blue-800 mt-5 mb-2 first:mt-0" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="text-md font-semibold text-blue-700 mt-4 mb-2 first:mt-0" {...props} />,
+                                p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-gray-700" {...props} />,
+                                ul: ({node, ...props}) => <ul className="mb-4 space-y-2 ml-1" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-2" {...props} />,
+                                li: ({node, ...props}) => (
+                                  <li className="flex flex-wrap items-start">
+                                    <span className="text-blue-500 mr-2 mt-0.5">•</span>
+                                    <span className="flex-1 text-gray-700" {...props} />
+                                  </li>
+                                ),
+                                strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                                em: ({node, ...props}) => <em className="italic text-gray-600" {...props} />,
+                              }}
+                            >
+                              {activeReview.aiSuggestion}
+                            </ReactMarkdown>
+                            {verdictText && (
+                              <div className={`mt-6 pt-4 border-t border-gray-100 flex items-center justify-between`}>
+                                <span className="font-semibold text-gray-700">Veredicto sugerido por IA:</span>
+                                <span className={`px-3 py-1 rounded-full text-sm font-bold border ${badgeColor}`}>
+                                  {verdictText}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-gray-500 italic text-center mt-10">No hay evaluación de IA disponible.</p>
+                        )}
+                      </div>
+                    </>
+                  );
                 })()}
-
-                <div className="flex-1 bg-white border border-blue-100 shadow-sm rounded-xl p-6 text-sm text-gray-800 overflow-y-auto">
-                  {(() => {
-                    const activeReview = patientDetail.auditReviews?.find((r: any) => !r.isArchived);
-                    if (activeReview?.aiSuggestion) {
-                      let verdictText = '';
-                      if (activeReview.extractedData) {
-                        try {
-                          const data = JSON.parse(activeReview.extractedData);
-                          verdictText = data.veredicto;
-                        } catch(e){}
-                      }
-                      
-                      let badgeColor = "bg-gray-100 text-gray-800";
-                      if (verdictText === 'APROBABLE') badgeColor = "bg-green-100 text-green-800 border-green-200";
-                      else if (verdictText === 'NO APROBABLE' || verdictText === 'RECHAZADO') badgeColor = "bg-red-100 text-red-800 border-red-200";
-                      else if (verdictText === 'APROBABLE CON OBSERVACIONES' || verdictText === 'REQUIERE INFO') badgeColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
-
-                      return (
-                        <>
-                          <ReactMarkdown
-                            components={{
-                              h1: ({node, ...props}) => <h1 className="text-xl font-bold text-blue-900 mt-6 mb-3 pb-2 border-b border-blue-100 first:mt-0" {...props} />,
-                              h2: ({node, ...props}) => <h2 className="text-lg font-semibold text-blue-800 mt-5 mb-2 first:mt-0" {...props} />,
-                              h3: ({node, ...props}) => <h3 className="text-md font-semibold text-blue-700 mt-4 mb-2 first:mt-0" {...props} />,
-                              p: ({node, ...props}) => <p className="mb-3 leading-relaxed text-gray-700" {...props} />,
-                              ul: ({node, ...props}) => <ul className="mb-4 space-y-2 ml-1" {...props} />,
-                              ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-2" {...props} />,
-                              li: ({node, ...props}) => (
-                                <li className="flex flex-wrap items-start">
-                                  <span className="text-blue-500 mr-2 mt-0.5">•</span>
-                                  <span className="flex-1 text-gray-700" {...props} />
-                                </li>
-                              ),
-                              strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
-                              em: ({node, ...props}) => <em className="italic text-gray-600" {...props} />,
-                            }}
-                          >
-                            {activeReview.aiSuggestion}
-                          </ReactMarkdown>
-                          {verdictText && (
-                            <div className={`mt-6 pt-4 border-t border-gray-100 flex items-center justify-between`}>
-                              <span className="font-semibold text-gray-700">Veredicto sugerido por IA:</span>
-                              <span className={`px-3 py-1 rounded-full text-sm font-bold border ${badgeColor}`}>
-                                {verdictText}
-                              </span>
-                            </div>
-                          )}
-                        </>
-                      );
-                    }
-                    return <p className="text-gray-500 italic text-center mt-10">No hay evaluación de IA disponible.</p>;
-                  })()}
-                </div>
               </div>
             </div>
 
