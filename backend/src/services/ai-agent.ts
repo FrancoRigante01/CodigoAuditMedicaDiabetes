@@ -182,7 +182,8 @@ Clasificar el expediente en UNA sola categoría: APROBABLE, APROBABLE CON OBSERV
     let hasAttachments = false;
     
     while ((match = attachmentRegex.exec(rawText)) !== null) {
-      const filePath = match[1].trim();
+      const filePath = match[1]?.trim();
+      if (!filePath) continue;
       hasAttachments = true;
       try {
         if (fs.existsSync(filePath)) {
